@@ -1,0 +1,214 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ContentType {
+  BLOG_POST
+  SOCIAL_MEDIA
+  EMAIL
+  AD_COPY
+  PRODUCT_DESCRIPTION
+  PRESS_RELEASE
+  NEWSLETTER
+  VIDEO_SCRIPT
+  OTHER
+}
+
+enum ContentTone {
+  PROFESSIONAL
+  CASUAL
+  FRIENDLY
+  PERSUASIVE
+  INFORMATIVE
+  HUMOROUS
+  AUTHORITATIVE
+  ENTHUSIASTIC
+}
+
+enum ContentStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ContentLength {
+  SHORT
+  MEDIUM
+  LONG
+}
+
+enum NotificationType {
+  CONTENT_GENERATED
+  CONTENT_PUBLISHED
+  CONTENT_SCHEDULED
+  CONTENT_ANALYZED
+  AI_SUGGESTION
+  SYSTEM
+  ACCOUNT
+}
+
+enum Theme {
+  LIGHT
+  DARK
+  SYSTEM
+}
+
+model User {
+  id               String    @id @default(uuid())
+  email            String    @unique
+  passwordHash     String
+  firstName        String
+  lastName         String
+  jobTitle         String?
+  company          String?
+  avatarUrl        String?
+  bio              String?
+  isActive         Boolean   @default(true)
+  lastLoginAt      DateTime?
+  refreshTokenHash String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  contents        Content[]
+  categories      ContentCategory[]
+  notifications   Notification[]
+  contentVersions ContentVersion[]
+  settings        UserSettings?
+
+  @@map("users")
+}
+
+model ContentCategory {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  color       String   @default("#6366F1")
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contents    Content[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@map("content_categories")
+}
+
+model Content {
+  id             String        @id @default(uuid())
+  title          String
+  body           String        @db.Text
+  excerpt        String?
+  type           ContentType
+  tone           ContentTone
+  targetAudience String?
+  keywords       String[]      @default([])
+  status         ContentStatus @default(DRAFT)
+  aiGenerated    Boolean       @default(false)
+  aiPrompt       String?       @db.Text
+  wordCount      Int           @default(0)
+  scheduledAt    DateTime?
+  publishedAt    DateTime?
+
+  categoryId String?
+  category   ContentCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  versions      ContentVersion[]
+  scores        ContentScore[]
+  notifications Notification[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([categoryId])
+  @@index([status])
+  @@index([type])
+  @@index([userId, status])
+  @@index([scheduledAt])
+  @@map("content")
+}
+
+model ContentVersion {
+  id         String   @id @default(uuid())
+  contentId  String
+  content    Content  @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  versionNum Int
+  title      String
+  body       String   @db.Text
+  changeNote String?
+  editedById String
+  editedBy   User     @relation(fields: [editedById], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([contentId, versionNum])
+  @@index([contentId])
+  @@map("content_versions")
+}
+
+model ContentScore {
+  id                String   @id @default(uuid())
+  contentId         String
+  content           Content  @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  overallScore      Int // 0-100 "perfection score"
+  needsCorrection   Boolean  @default(false)
+  seoScore          Int      @default(0)
+  readabilityScore  Int      @default(0)
+  structureScore    Int      @default(0)
+  toneScore         Int      @default(0)
+  grammarScore      Int      @default(0)
+  summary           String   @db.Text
+  issues            Json     @default("[]") // [{ category: "SEO"|"Readability"|"Structure"|"Tone"|"Grammar", detail: string }]
+  strengths         String[] @default([])
+  createdAt         DateTime @default(now())
+
+  @@index([contentId])
+  @@index([contentId, createdAt])
+  @@map("content_scores")
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  contentId String?
+  content   Content?         @relation(fields: [contentId], references: [id], onDelete: SetNull)
+  createdAt DateTime         @default(now())
+
+  @@index([userId])
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+model UserSettings {
+  id                 String        @id @default(uuid())
+  userId             String        @unique
+  user               User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  theme              Theme         @default(SYSTEM)
+  emailNotifications Boolean       @default(true)
+  pushNotifications  Boolean       @default(false)
+  weeklyDigest       Boolean       @default(true)
+  defaultTone        ContentTone   @default(PROFESSIONAL)
+  defaultContentType ContentType   @default(BLOG_POST)
+  defaultLength      ContentLength @default(MEDIUM)
+  aiCreativity       Float         @default(0.7)
+  language           String        @default("en")
+  timezone           String        @default("UTC")
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  @@map("user_settings")
+}

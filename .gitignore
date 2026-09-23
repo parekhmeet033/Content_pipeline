@@ -1,0 +1,15 @@
+node_modules/
+.env
+.env.local
+!.env.example
+dist/
+build/
+*.log
+npm-debug.log*
+.DS_Store
+.vscode/
+.idea/
+backend/prisma/dev.db
+coverage/
+.claude/
+
