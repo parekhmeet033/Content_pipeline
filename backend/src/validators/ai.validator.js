@@ -25,4 +25,13 @@ const suggestionsSchema = z.object({
   params: z.object({}).optional(),
 });
 
-module.exports = { generateContentSchema, suggestionsSchema };
+const analyzeImageSchema = z.object({
+  body: z.object({
+    imageUrl: z.string().url('Enter a valid image URL'),
+    prompt: z.string().max(500).optional(),
+  }),
+  query: z.object({}).optional(),
+  params: z.object({}).optional(),
+});
+
+module.exports = { generateContentSchema, suggestionsSchema, analyzeImageSchema };

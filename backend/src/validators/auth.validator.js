@@ -20,4 +20,22 @@ const loginSchema = z.object({
   params: z.object({}).optional(),
 });
 
-module.exports = { registerSchema, loginSchema };
+const forgotPasswordSchema = z.object({
+  body: z.object({
+    email: z.string().email('Enter a valid email address'),
+  }),
+  query: z.object({}).optional(),
+  params: z.object({}).optional(),
+});
+
+const resetPasswordSchema = z.object({
+  body: z.object({
+    email: z.string().email('Enter a valid email address'),
+    token: z.string().min(1, 'Reset code/token is required'),
+    newPassword: z.string().min(8, 'New password must be at least 8 characters'),
+  }),
+  query: z.object({}).optional(),
+  params: z.object({}).optional(),
+});
+
+module.exports = { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema };

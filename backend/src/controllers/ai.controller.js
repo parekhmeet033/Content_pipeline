@@ -33,4 +33,9 @@ const suggestions = asyncHandler(async (req, res) => {
   sendSuccess(res, 200, { result });
 });
 
-module.exports = { generate, suggestions };
+const analyzeImage = asyncHandler(async (req, res) => {
+  const result = await openaiService.analyzeImage(req.body);
+  sendSuccess(res, 200, { result });
+});
+
+module.exports = { generate, suggestions, analyzeImage };

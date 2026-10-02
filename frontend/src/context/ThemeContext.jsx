@@ -6,7 +6,7 @@ const STORAGE_KEY = 'contentnova-theme';
 
 function resolveEffectiveTheme(theme) {
   if (theme === 'SYSTEM' || !theme) {
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    return 'light';
   }
   return theme.toLowerCase();
 }
@@ -19,9 +19,9 @@ function applyTheme(theme) {
 export function ThemeProvider({ children }) {
   const [theme, setThemeState] = useState(() => {
     try {
-      return localStorage.getItem(STORAGE_KEY) || 'SYSTEM';
+      return localStorage.getItem(STORAGE_KEY) || 'LIGHT';
     } catch {
-      return 'SYSTEM';
+      return 'LIGHT';
     }
   });
 

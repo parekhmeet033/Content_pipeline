@@ -3,7 +3,7 @@ const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
 const { sendSuccess } = require('../utils/ApiResponse');
 const { hashValue, compareValue } = require('../utils/password');
-const { verifyRefreshToken } = require('../utils/jwt');
+const { verifyRefreshToken, signResetToken, verifyResetToken } = require('../utils/jwt');
 const { SAFE_USER_SELECT, issueTokens } = require('../services/auth.service');
 const { env } = require('../config/env');
 
@@ -121,4 +121,57 @@ const me = asyncHandler(async (req, res) => {
   sendSuccess(res, 200, { user });
 });
 
-module.exports = { register, login, refresh, logout, me };
+const forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  const normalizedEmail = email.toLowerCase().trim();
+
+  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+  if (!user || !user.isActive) {
+    sendSuccess(res, 200, {
+      message: 'If an account exists with this email, a reset token has been generated.',
+    });
+    return;
+  }
+
+  const resetToken = signResetToken(user);
+
+  sendSuccess(res, 200, {
+    message: 'Password reset token generated successfully.',
+    resetToken,
+  });
+});
+
+const resetPassword = asyncHandler(async (req, res) => {
+  const { email, token, newPassword } = req.body;
+  const normalizedEmail = email.toLowerCase().trim();
+
+  let decoded;
+  try {
+    decoded = verifyResetToken(token);
+  } catch {
+    throw new ApiError(400, 'Invalid or expired password reset token');
+  }
+
+  if (decoded.email.toLowerCase() !== normalizedEmail) {
+    throw new ApiError(400, 'Reset token does not match the specified email');
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: decoded.sub } });
+  if (!user || !user.isActive) {
+    throw new ApiError(404, 'User not found or inactive');
+  }
+
+  const passwordHash = await hashValue(newPassword);
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      passwordHash,
+      refreshTokenHash: null,
+    },
+  });
+
+  sendSuccess(res, 200, { message: 'Password reset successful. You can now log in.' });
+});
+
+module.exports = { register, login, refresh, logout, me, forgotPassword, resetPassword };

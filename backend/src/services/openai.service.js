@@ -292,4 +292,32 @@ async function improveContent({ title, body, type, tone, targetAudience, keyword
   });
 }
 
-module.exports = { generateContent, generateSuggestions, analyzeContent, improveContent };
+async function analyzeImage({ imageUrl, prompt = 'Describe this image in detail for content marketing purposes.' }) {
+  const openai = getClient(env.openaiApiKey);
+  let completion;
+  try {
+    completion = await openai.chat.completions.create({
+      model: env.openaiModel || 'openai/gpt-4o-mini',
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: prompt },
+            { type: 'image_url', image_url: { url: imageUrl } },
+          ],
+        },
+      ],
+      max_tokens: 1000,
+    });
+  } catch (err) {
+    if (err?.status === 401) {
+      throw new ApiError(503, 'The AI provider rejected the configured API key. Check OPENAI_API_KEY.');
+    }
+    throw new ApiError(502, `Failed to analyze image: ${err.message}`);
+  }
+
+  const description = completion.choices?.[0]?.message?.content || '';
+  return { description };
+}
+
+module.exports = { generateContent, generateSuggestions, analyzeContent, improveContent, analyzeImage };

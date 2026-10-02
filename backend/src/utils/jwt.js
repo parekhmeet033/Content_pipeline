@@ -20,4 +20,21 @@ function verifyRefreshToken(token) {
   return jwt.verify(token, process.env.JWT_REFRESH_SECRET);
 }
 
-module.exports = { signAccessToken, signRefreshToken, verifyAccessToken, verifyRefreshToken };
+function signResetToken(user) {
+  return jwt.sign({ sub: user.id, email: user.email, type: 'reset' }, process.env.JWT_ACCESS_SECRET, {
+    expiresIn: '15m',
+  });
+}
+
+function verifyResetToken(token) {
+  return jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+}
+
+module.exports = {
+  signAccessToken,
+  signRefreshToken,
+  verifyAccessToken,
+  verifyRefreshToken,
+  signResetToken,
+  verifyResetToken,
+};

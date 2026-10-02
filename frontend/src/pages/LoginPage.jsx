@@ -53,15 +53,25 @@ export default function LoginPage() {
             onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
             error={errors.email}
           />
-          <Input
-            label="Password"
-            type="password"
-            autoComplete="current-password"
-            required
-            value={form.password}
-            onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-            error={errors.password}
-          />
+          <div>
+            <div className="mb-1 flex items-center justify-between">
+              <label htmlFor="password-input" className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                Password
+              </label>
+              <Link to="/forgot-password" className="text-xs font-medium text-slate-600 hover:underline dark:text-slate-400">
+                Forgot password?
+              </Link>
+            </div>
+            <Input
+              id="password-input"
+              type="password"
+              autoComplete="current-password"
+              required
+              value={form.password}
+              onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+              error={errors.password}
+            />
+          </div>
           <Button type="submit" loading={submitting} className="mt-2">
             Log in
           </Button>

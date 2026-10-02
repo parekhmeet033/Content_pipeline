@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { FileText, Gauge, AlertTriangle, Sparkles } from 'lucide-react';
+import { FileText, AlertTriangle, Sparkles } from 'lucide-react';
 import * as scoreService from '../api/scoreService';
 import * as contentService from '../api/contentService';
 import { useAuth } from '../hooks/useAuth';
@@ -7,10 +7,6 @@ import StatCard from '../components/dashboard/StatCard';
 import RecentContentList from '../components/dashboard/RecentContentList';
 import QuickActions from '../components/dashboard/QuickActions';
 import Spinner from '../components/common/Spinner';
-import Card from '../components/common/Card';
-import PieChart from '../components/common/PieChart';
-import ScoreGauge from '../components/score/ScoreGauge';
-import { STATUS_COLORS_HEX } from '../constants';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -25,12 +21,6 @@ export default function DashboardPage() {
     queryFn: () => contentService.listContent({ limit: 5, sortBy: 'updatedAt', sortDir: 'desc' }),
   });
 
-  const statusPieData = Object.entries(STATUS_COLORS_HEX).map(([status, color]) => ({
-    label: status.charAt(0) + status.slice(1).toLowerCase(),
-    color,
-    value: overview?.byStatus.find((s) => s.status === status)?.count || 0,
-  }));
-
   return (
     <div className="flex flex-col gap-8">
       <div>
@@ -41,13 +31,8 @@ export default function DashboardPage() {
       {overviewLoading ? (
         <Spinner label="Loading stats" />
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <StatCard label="Total content" value={overview?.totalContent ?? 0} icon={FileText} />
-          <StatCard
-            label="Avg. perfection score"
-            value={overview?.totalAnalyzed ? `${overview.avgOverallScore}/100` : '—'}
-            icon={Gauge}
-          />
           <StatCard
             label="Needs correction"
             value={overview?.needsCorrectionCount ?? 0}
@@ -61,27 +46,6 @@ export default function DashboardPage() {
       <div>
         <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">Quick actions</h3>
         <QuickActions />
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card className="p-5">
-          <h3 className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">Content by status</h3>
-          {overviewLoading ? <Spinner label="Loading" /> : <PieChart data={statusPieData} />}
-        </Card>
-        <Card className="flex flex-col items-center justify-center p-5">
-          <h3 className="mb-3 self-start text-sm font-semibold text-slate-900 dark:text-slate-100">
-            Average perfection score
-          </h3>
-          {overviewLoading ? (
-            <Spinner label="Loading" />
-          ) : overview?.totalAnalyzed ? (
-            <ScoreGauge score={overview.avgOverallScore} label="Across all analyzed content" />
-          ) : (
-            <p className="py-10 text-center text-xs text-slate-400 dark:text-slate-500">
-              Analyze a piece of content to see your average score here.
-            </p>
-          )}
-        </Card>
       </div>
 
       <div>
